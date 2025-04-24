@@ -1,6 +1,6 @@
-import fetch from 'node-fetch';
+const fetch = require('node-fetch');
 
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
   const { token } = req.query;
 
   try {
@@ -18,4 +18,4 @@ export default async function handler(req, res) {
   } catch (e) {
     res.status(500).json({ error: '请求失败', detail: e.message });
   }
-}
+};
