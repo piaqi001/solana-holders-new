@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html>
 <head>
 <meta charset="utf-8"/>
@@ -23,15 +24,15 @@
 </style>
 </head>
 <body>
-  <h2>Solana 多代币前 400 持仓查询</h2>
-  <input type="text" id="token1" placeholder="请输入第一个代币地址">
-  <input type="text" id="token2" placeholder="请输入第二个代币地址">
-  <input type="text" id="token3" placeholder="可选：第三个代币地址">
-  <button onclick="handleQuery()">查询</button>
-  <div id="loading" class="loading" style="display:none;"></div>
-  <div class="results-container" id="results"></div>
-  <div id="overlap-container"></div>
-  <script>
+<h2>Solana 多代币前 400 持仓查询</h2>
+<input id="token1" placeholder="请输入第一个代币地址" type="text"/>
+<input id="token2" placeholder="请输入第二个代币地址" type="text"/>
+<input id="token3" placeholder="可选：第三个代币地址" type="text"/>
+<button onclick="handleQuery()">查询</button>
+<div class="loading" id="loading" style="display:none;"></div>
+<div class="results-container" id="results"></div>
+<div id="overlap-container"></div>
+<script>
     async function handleQuery() {
       document.getElementById("loading").style.display = "block";
       const t1 = document.getElementById("token1").value.trim();
@@ -119,6 +120,10 @@
         </table>
       `;
     }
-  </script>
-</body>
+  
+function renderTimestamp() {
+  const t = new Date();
+  document.getElementById("timestamp").innerText = "查询时间：" + t.toLocaleString();
+}</script>
+<div id="timestamp"></div></body>
 </html>
