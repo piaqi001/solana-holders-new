@@ -1,8 +1,9 @@
+
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Solana Multi-Token Holder Checker</title>
+  <title>Solana 多代币前 400 持仓查询</title>
   <style>
     body { font-family: Arial, sans-serif; padding: 20px; }
     input { padding: 6px; width: 480px; margin-bottom: 10px; display: block; }
@@ -19,6 +20,7 @@
     .color-1 { color: black; }
     .color-2 { color: blue; }
     .color-3 { color: red; }
+    #timestamp { margin-top: 10px; font-size: 14px; font-style: italic; color: gray; }
   </style>
 </head>
 <body>
@@ -29,31 +31,42 @@
   <input type="text" id="token3" placeholder="请输入第三个代币 Mint 地址">
   <button id="queryButton">查询</button>
   <p id="loading" class="loading" style="display: none;">加载中，请稍候...</p>
+  <p id="timestamp"></p>
 
   <div class="results-container" id="results"></div>
   <div id="overlapStats"></div>
 
   <script>
     document.addEventListener("DOMContentLoaded", function () {
-      function getColorClass(counts) {
-        if (counts === 3) return "color-3";
-        if (counts === 2) return "color-2";
-        return "color-1";
+      async function queryToken(token) {
+        const res = await fetch("/api/holders?token=" + token);
+        if (!res.ok) throw new Error("网络错误：" + res.status);
+        return await res.json();
+      }
+
+      async function getTokenName(token) {
+        try {
+          const res = await fetch("https://api.helius.xyz/v0/token-metadata?api-key=f9e47385-9354-4ee6-8b39-17cb0326bdc6", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mintAccounts: [token] })
+          });
+          const data = await res.json();
+          return data?.[0]?.name || "未知代币";
+        } catch {
+          return "未知代币";
+        }
       }
 
       function calculateTotals(datasets) {
-        return datasets.map(function(data) {
-          return data.reduce(function(sum, item) {
-            return sum + item.amount;
-          }, 0);
-        });
+        return datasets.map(data => data.reduce((sum, item) => sum + item.amount, 0));
       }
 
       function mergeAddresses(datasets) {
-        var map = new Map();
-        datasets.forEach(function(dataset, tokenIndex) {
-          dataset.forEach(function(holder) {
-            var existing = map.get(holder.wallet) || { wallet: holder.wallet, counts: 0, amounts: [0, 0, 0] };
+        const map = new Map();
+        datasets.forEach((dataset, tokenIndex) => {
+          dataset.forEach(holder => {
+            const existing = map.get(holder.wallet) || { wallet: holder.wallet, counts: 0, amounts: [0, 0, 0] };
             existing.counts += 1;
             existing.amounts[tokenIndex] = holder.amount;
             map.set(holder.wallet, existing);
@@ -62,70 +75,67 @@
         return Array.from(map.values());
       }
 
-      function queryToken(token) {
-        return fetch("/api/holders?token=" + token)
-          .then(function(response) {
-            if (!response.ok) throw new Error("网络错误：" + response.status);
-            return response.json();
-          });
+      function getColorClass(counts) {
+        if (counts === 3) return "color-3";
+        if (counts === 2) return "color-2";
+        return "color-1";
       }
 
-      document.getElementById("queryButton").addEventListener("click", function () {
-        var tokens = [
+      document.getElementById("queryButton").addEventListener("click", async function () {
+        const tokens = [
           document.getElementById("token1").value.trim(),
           document.getElementById("token2").value.trim(),
           document.getElementById("token3").value.trim()
         ].filter(Boolean);
 
-        var loading = document.getElementById("loading");
-        var results = document.getElementById("results");
-        var overlapStats = document.getElementById("overlapStats");
+        const loading = document.getElementById("loading");
+        const results = document.getElementById("results");
+        const overlapStats = document.getElementById("overlapStats");
+        const timestamp = document.getElementById("timestamp");
         loading.style.display = "block";
         results.innerHTML = "";
         overlapStats.innerHTML = "";
+        timestamp.textContent = "";
 
-        Promise.all(tokens.map(queryToken))
-          .then(function(datasets) {
-            var totals = calculateTotals(datasets);
-            var merged = mergeAddresses(datasets);
+        try {
+          const datasets = await Promise.all(tokens.map(queryToken));
+          const tokenNames = await Promise.all(tokens.map(getTokenName));
+          const totals = calculateTotals(datasets);
+          const merged = mergeAddresses(datasets);
+          timestamp.textContent = "查询时间：" + new Date().toLocaleString();
 
-            tokens.forEach(function(token, tokenIndex) {
-              var column = document.createElement("div");
-              column.className = "token-column";
-
-              var tableHTML = "<h3>代币 " + (tokenIndex + 1) + "</h3>";
-              tableHTML += "<table><thead><tr><th>排名</th><th>地址</th><th>占比</th></tr></thead><tbody>";
-              tableHTML += datasets[tokenIndex].map(function(item, i) {
-                var wallet = item.wallet;
-                var percent = ((item.amount / totals[tokenIndex]) * 100).toFixed(4) + "%";
-                var holderInfo = merged.find(function(x) { return x.wallet === wallet; });
-                var colorClass = getColorClass(holderInfo.counts);
-                return "<tr class='" + colorClass + "'><td>" + (i + 1) + "</td><td><a class='" + colorClass + "' href='https://solscan.io/account/" + wallet + "' target='_blank'>" + wallet + "</a></td><td>" + percent + "</td></tr>";
-              }).join("");
-              tableHTML += "</tbody></table>";
-
-              column.innerHTML = tableHTML;
-              results.appendChild(column);
-            });
-
-            var overlapHTML = "<h3>重叠地址统计</h3><table><thead><tr><th>地址</th><th>三重率</th></tr></thead><tbody>";
-            overlapHTML += merged.filter(function(x) { return x.counts >= 2; }).map(function(x) {
-              var percents = x.amounts.map(function(amt, i) {
-                return amt / totals[i];
-              });
-              var triple = (Math.min.apply(null, percents) * 100).toFixed(4) + "%";
-              return "<tr class='" + getColorClass(x.counts) + "'><td>" + x.wallet + "</td><td>" + triple + "</td></tr>";
+          tokens.forEach((token, tokenIndex) => {
+            const column = document.createElement("div");
+            column.className = "token-column";
+            let html = "<h3>" + tokenNames[tokenIndex] + "</h3>";
+            html += "<table><thead><tr><th>排名</th><th>地址</th><th>占比</th></tr></thead><tbody>";
+            html += datasets[tokenIndex].map((item, i) => {
+              const wallet = item.wallet;
+              const percent = ((item.amount / totals[tokenIndex]) * 100).toFixed(4) + "%";
+              const holderInfo = merged.find(x => x.wallet === wallet);
+              const colorClass = getColorClass(holderInfo.counts);
+              return "<tr class='" + colorClass + "'><td>" + (i + 1) + "</td><td><a href='https://solscan.io/account/" + wallet + "' target='_blank' class='" + colorClass + "'>" + wallet + "</a></td><td>" + percent + "</td></tr>";
             }).join("");
-            overlapHTML += "</tbody></table>";
-            overlapStats.innerHTML = overlapHTML;
-          })
-          .catch(function(err) {
-            console.error(err);
-            results.innerHTML = '<p class="error">查询失败：' + err.message + '</p>';
-          })
-          .finally(function() {
-            loading.style.display = "none";
+            html += "</tbody></table>";
+            column.innerHTML = html;
+            results.appendChild(column);
           });
+
+          let overlapHTML = "<h3>重叠地址统计</h3><table><thead><tr><th>地址</th><th>三重率</th></tr></thead><tbody>";
+          overlapHTML += merged.filter(x => x.counts >= 2).map(x => {
+            const percents = x.amounts.map((amt, i) => amt / totals[i]);
+            const triple = (Math.min(...percents) * 100).toFixed(4) + "%";
+            return "<tr class='" + getColorClass(x.counts) + "'><td>" + x.wallet + "</td><td>" + triple + "</td></tr>";
+          }).join("");
+          overlapHTML += "</tbody></table>";
+          overlapStats.innerHTML = overlapHTML;
+
+        } catch (err) {
+          results.innerHTML = "<p class='error'>查询失败：" + err.message + "</p>";
+          console.error(err);
+        } finally {
+          loading.style.display = "none";
+        }
       });
     });
   </script>
