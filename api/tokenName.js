@@ -11,12 +11,12 @@ module.exports = async (req, res) => {
 
     const tokens = response.data?.tokens || [];
 
-    // 打印调试信息到 Vercel 日志
+    // 调试输出
     console.log("Token list loaded:", tokens.length);
     console.log("Sample token[0]:", tokens[0]);
     console.log("Looking for token:", token);
 
-    const found = tokens.find(t => t.address === token);
+    const found = tokens.find(t => t.address.toLowerCase() === token.toLowerCase());
     const name = found?.name || "未知代币";
 
     console.log("Found token:", found);
