@@ -7,13 +7,19 @@ module.exports = async (req, res) => {
   }
 
   try {
-    // 从 Solana 官方 GitHub 获取 token list
     const response = await axios.get("https://raw.githubusercontent.com/solana-labs/token-list/main/src/tokens/solana.tokenlist.json");
+
     const tokens = response.data?.tokens || [];
 
-    // 精确匹配 address 字段
+    // 打印调试信息到 Vercel 日志
+    console.log("Token list loaded:", tokens.length);
+    console.log("Sample token[0]:", tokens[0]);
+    console.log("Looking for token:", token);
+
     const found = tokens.find(t => t.address === token);
     const name = found?.name || "未知代币";
+
+    console.log("Found token:", found);
 
     res.status(200).json({ name });
   } catch (err) {
