@@ -62,7 +62,11 @@ module.exports = async (req, res) => {
     }).filter(Boolean);
 
     parsed.sort((a, b) => b.amount - a.amount);
-    const top400 = parsed.slice(0, 400);
+    const total = parsed.reduce((sum, acc) => sum + acc.amount, 0);
+const top400 = parsed.slice(0, 400).map(acc => ({
+  ...acc,
+  percent: total > 0 ? (acc.amount / total) * 100 : 0
+}));
 
     res.status(200).json(top400);
   } catch (err) {
