@@ -7,10 +7,12 @@ module.exports = async (req, res) => {
   }
 
   try {
+    // 从 Solana 官方 GitHub 获取 token list
     const response = await axios.get("https://raw.githubusercontent.com/solana-labs/token-list/main/src/tokens/solana.tokenlist.json");
     const tokens = response.data?.tokens || [];
 
-    const found = tokens.find(t => String(t.address) === String(token));
+    // 精确匹配 address 字段
+    const found = tokens.find(t => t.address === token);
     const name = found?.name || "未知代币";
 
     res.status(200).json({ name });
