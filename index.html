@@ -24,7 +24,6 @@
 </head>
 <body>
   <h2>Solana 多代币前 400 持仓查询</h2>
-  <!-- 输入与按钮 -->
   <input type="text" id="token1" placeholder="请输入第一个代币地址">
   <input type="text" id="token2" placeholder="请输入第二个代币地址">
   <input type="text" id="token3" placeholder="可选：第三个代币地址">
@@ -43,9 +42,15 @@
       const results = [];
 
       for (let token of tokens) {
-        const res = await fetch(`/api/holders?tokenAddress=${token}`);
+        const res = await fetch(`/api/holders?token=${token}`);
         const json = await res.json();
-        results.push({ name: token.slice(0, 4), holders: json.data });
+
+        if (!json || !Array.isArray(json)) {
+          alert("查询失败或没有持仓数据");
+          continue;
+        }
+
+        results.push({ name: token.slice(0, 4), holders: json });
       }
 
       document.getElementById("loading").style.display = "none";
@@ -63,7 +68,7 @@
             <tbody>
               ${token.holders.map(h => `
                 <tr>
-                  <td><a href="https://solscan.io/account/${h.address}" target="_blank">${h.address}</a></td>
+                  <td><a href="https://solscan.io/account/${h.wallet}" target="_blank">${h.wallet}</a></td>
                   <td>${(h.percent || 0).toFixed(4)}%</td>
                 </tr>
               `).join('')}
@@ -74,8 +79,8 @@
 
     function showOverlapTable(tokenDataList) {
       const [tokenA, tokenB] = tokenDataList;
-      const mapA = new Map(tokenA.holders.map(addr => [addr.address, addr]));
-      const mapB = new Map(tokenB.holders.map(addr => [addr.address, addr]));
+      const mapA = new Map(tokenA.holders.map(addr => [addr.wallet, addr]));
+      const mapB = new Map(tokenB.holders.map(addr => [addr.wallet, addr]));
 
       const overlap = [];
       for (const [address, dataA] of mapA.entries()) {
