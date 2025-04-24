@@ -1,0 +1,9 @@
+{
+  "name": "solana-holders",
+  "version": "1.0.0",
+  "type": "commonjs",
+  "dependencies": {
+    "axios": "^1.6.7",
+    "bs58": "^5.0.0"
+  }
+}
