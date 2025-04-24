@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Solana 多代币前 400 持仓地址查询</title>
+  <title>Solana 多代币前 400 持仓查询</title>
   <style>
     body { font-family: Arial, sans-serif; padding: 20px; }
     input { padding: 6px; width: 480px; margin-bottom: 10px; display: block; }
@@ -22,15 +22,15 @@
   <input type="text" id="token1" placeholder="请输入第一个代币 Mint 地址">
   <input type="text" id="token2" placeholder="请输入第二个代币 Mint 地址">
   <input type="text" id="token3" placeholder="请输入第三个代币 Mint 地址">
-  <button onclick="queryAll()">查询</button>
+  <button id="queryButton">查询</button>
 
   <div id="results"></div>
 
   <script>
-    async function queryToken(token, index) {
-      const container = document.createElement('div');
-      container.innerHTML = '<p class="loading">正在查询代币 ' + (index + 1) + '...</p>';
-      document.getElementById('results').appendChild(container);
+    async function queryToken(token, index, container) {
+      const block = document.createElement('div');
+      block.innerHTML = `<p class="loading">正在查询第 ${index + 1} 个代币...</p>`;
+      container.appendChild(block);
 
       try {
         const response = await fetch('/api/holders?token=' + token);
@@ -38,40 +38,43 @@
         const data = await response.json();
         if (!Array.isArray(data)) throw new Error("返回格式错误");
 
-        container.innerHTML = \`
-          <h3>代币 \${index + 1}</h3>
+        block.innerHTML = `
+          <h3>代币 ${index + 1}</h3>
           <table>
             <thead><tr><th>排名</th><th>地址</th><th>余额</th></tr></thead>
             <tbody>
-              \${data.slice(0, 400).map((item, i) => \`
+              ${data.slice(0, 400).map((item, i) => `
                 <tr>
-                  <td>\${i + 1}</td>
-                  <td><a href="https://solscan.io/account/\${item.wallet}" target="_blank">\${item.wallet}</a></td>
-                  <td>\${item.amount}</td>
+                  <td>${i + 1}</td>
+                  <td><a href="https://solscan.io/account/${item.wallet}" target="_blank">${item.wallet}</a></td>
+                  <td>${item.amount}</td>
                 </tr>
-              \`).join('')}
+              `).join('')}
             </tbody>
           </table>
-        \`;
+        `;
       } catch (err) {
         console.error(err);
-        container.innerHTML = '<p class="error">查询失败：' + err.message + '</p>';
+        block.innerHTML = `<p class="error">查询失败：${err.message}</p>`;
       }
     }
 
-    function queryAll() {
-      document.getElementById('results').innerHTML = '';
-      const tokens = [
-        document.getElementById('token1').value.trim(),
-        document.getElementById('token2').value.trim(),
-        document.getElementById('token3').value.trim()
-      ].filter(Boolean);
-      tokens.forEach((token, index) => {
-        queryToken(token, index);
-      });
-    }
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('queryButton').addEventListener('click', () => {
+        const container = document.getElementById('results');
+        container.innerHTML = '';
 
-    window.queryAll = queryAll;
+        const tokens = [
+          document.getElementById('token1').value.trim(),
+          document.getElementById('token2').value.trim(),
+          document.getElementById('token3').value.trim()
+        ].filter(Boolean);
+
+        tokens.forEach((token, index) => {
+          queryToken(token, index, container);
+        });
+      });
+    });
   </script>
 </body>
 </html>
