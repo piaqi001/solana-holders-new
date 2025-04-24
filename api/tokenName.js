@@ -7,9 +7,8 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const response = await axios.get("https://token-list-api.solana.cloud/v1/tokens");
-    const rawList = response.data;
-    const tokens = Array.isArray(rawList) ? rawList : rawList.tokens;
+    const response = await axios.get("https://raw.githubusercontent.com/solana-labs/token-list/main/src/tokens/solana.tokenlist.json");
+    const tokens = response.data?.tokens || [];
 
     const found = tokens.find(t => String(t.address) === String(token));
     const name = found?.name || "未知代币";
