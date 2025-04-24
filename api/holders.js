@@ -1,4 +1,3 @@
-
 const axios = require('axios');
 const bs58 = require('bs58');
 
@@ -11,7 +10,6 @@ function readPublicKey(buffer, offset) {
 }
 
 function readAmount(buffer, offset) {
-  // 64-bit unsigned int, little endian
   return buffer.readBigUInt64LE(offset);
 }
 
@@ -39,29 +37,39 @@ module.exports = async (req, res) => {
         }
       ]
     }, {
-      headers: {
-        "Content-Type": "application/json"
-      }
+      headers: { "Content-Type": "application/json" }
     });
 
-    const accounts = response.data.result || [];
+    const accounts = response.data.result;
+    if (!accounts || !Array.isArray(accounts)) {
+      throw new Error("未能获取持仓数据，可能 token 地址无效或无持仓");
+    }
+
     const parsed = accounts.map(({ account }) => {
-      const [dataBase64] = account.data;
-      const buffer = decodeBase64ToBuffer(dataBase64);
-      const owner = readPublicKey(buffer, 32);
-      const rawAmount = readAmount(buffer, 64);
-      return {
-        wallet: owner,
-        amount: Number(rawAmount) / 1e6 // 默认6位小数
-      };
-    });
+      try {
+        const [dataBase64] = account.data;
+        const buffer = decodeBase64ToBuffer(dataBase64);
+        const owner = readPublicKey(buffer, 32);
+        const rawAmount = readAmount(buffer, 64);
+        return {
+          wallet: owner,
+          amount: Number(rawAmount) / 1e6
+        };
+      } catch (err) {
+        console.warn("解析失败:", err);
+        return null;
+      }
+    }).filter(Boolean);
 
     parsed.sort((a, b) => b.amount - a.amount);
-    const top200 = parsed.slice(0, 200);
+    const top400 = parsed.slice(0, 400);
 
-    res.status(200).json(top200);
+    res.status(200).json(top400);
   } catch (err) {
     console.error("查询失败:", err.response?.data || err.message);
-    res.status(500).json({ error: "查询失败", detail: err.response?.data || err.message });
+    res.status(500).json({
+      error: "查询失败",
+      detail: err.response?.data || err.message
+    });
   }
 };
