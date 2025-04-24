@@ -1,21 +1,25 @@
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
-
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   const { token } = req.query;
 
-  try {
-    const tokenListRes = await fetch('https://raw.githubusercontent.com/solana-labs/token-list/main/src/tokens/solana.tokenlist.json');
-    const tokenList = await tokenListRes.json();
-    const tokens = tokenList.tokens;
+  if (!token) {
+    return res.status(400).json({ error: 'Token address is required' });
+  }
 
+  try {
+    const response = await fetch('https://token.jup.ag/all');
+    const tokens = await response.json();
     const found = tokens.find(t => t.address.toLowerCase() === token.toLowerCase());
 
     if (found) {
-      res.status(200).json({ name: found.name });
+      res.status(200).json({
+        name: found.name,
+        symbol: found.symbol,
+        logoURI: found.logoURI
+      });
     } else {
       res.status(200).json({ name: '未知代币' });
     }
-  } catch (e) {
-    res.status(500).json({ error: '请求失败', detail: e.message });
+  } catch (error) {
+    res.status(500).json({ error: '无法获取代币名称', detail: error.message });
   }
-};
+}
