@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   try {
     const response = await fetch('https://token.jup.ag/all');
     const tokens = await response.json();
-    const found = tokens.find(t => t.address === token);
+    const found = tokens.find(t => t.address.toLowerCase() === token.toLowerCase());
 
     if (found) {
       res.status(200).json({
