@@ -34,101 +34,95 @@
 <div id="overlap-container"></div>
 <div id="timestamp"></div>
 <script>
-    const addressRemarks = {
-      "Be1wABrhNCprQVep99KurhKJWXfQVNAZ1A5DM21Bi7AM": "八月3",
-      "EiiAnQsfcruxHFkDabAmH4gzqLUZoEVwRuqEFQGP11xw": "trump大鲸鱼(做市商)"
-    };
+const addressRemarks = {
+  "Be1wABrhNCprQVep99KurhKJWXfQVNAZ1A5DM21Bi7AM": "八月3",
+  "EiiAnQsfcruxHFkDabAmH4gzqLUZoEVwRuqEFQGP11xw": "trump大鲸鱼(做市商)"
+};
 
-    async function handleQuery() {
-      document.getElementById("loading").style.display = "block";
-      const t1 = document.getElementById("token1").value.trim();
-      const t2 = document.getElementById("token2").value.trim();
-      const t3 = document.getElementById("token3").value.trim();
+async function handleQuery() {
+  document.getElementById("loading").style.display = "block";
+  const t1 = document.getElementById("token1").value.trim();
+  const t2 = document.getElementById("token2").value.trim();
+  const t3 = document.getElementById("token3").value.trim();
+  const tokens = [t1, t2, t3].filter(Boolean);
+  const results = [];
 
-      const tokens = [t1, t2, t3].filter(Boolean);
-      const results = [];
-
-      for (let token of tokens) {
-        const res = await fetch(`/api/holders?token=${token}`);
-        const json = await res.json();
-
-        if (!json || !Array.isArray(json)) {
-          alert("查询失败或没有持仓数据");
-          continue;
-        }
-
-        results.push({ name: token.slice(0, 4), holders: json });
-      }
-
-      document.getElementById("loading").style.display = "none";
-      renderResults(results);
-      showOverlap(results);
+  for (let token of tokens) {
+    const res = await fetch(`/api/holders?token=${token}`);
+    const json = await res.json();
+    if (!json || !Array.isArray(json)) {
+      alert("查询失败或没有持仓数据");
+      continue;
     }
+    const total = json.reduce((sum, h) => sum + (h.amount || 0), 0);
+    json.forEach(h => {
+      h.percent = total > 0 ? (h.amount / total * 100) : 0;
+    });
+    results.push({ name: token.slice(0, 4), holders: json });
+  }
 
-    function renderResults(results) {
-      const container = document.getElementById("results");
-      container.innerHTML = results.map(token => {
-        const total = token.holders.reduce((sum, h) => sum + (h.amount || 0), 0);
-        return `
-          <div class="token-column">
-            <h3>${token.name}</h3>
-            <table>
-              <thead><tr><th>地址</th><th>持仓%</th></tr></thead>
-              <tbody>
-                ${token.holders.map(h => {
-                  const percent = total > 0 ? (h.amount / total * 100) : 0;
-                  return `
-                    <tr>
-                      <td><a href="https://solscan.io/account/${h.wallet}" target="_blank">
-                        ${addressRemarks[h.wallet] || h.wallet}</a></td>
-                      <td>${percent.toFixed(4)}%</td>
-                    </tr>`;
-                }).join('')}
-              </tbody>
-            </table>
-          </div>`;
-      }).join('');
+  document.getElementById("loading").style.display = "none";
+  renderResults(results);
+  showOverlap(results);
+}
 
-      document.getElementById("timestamp").innerText = `查询时间：${new Date().toLocaleString()}`;
-    }
+function renderResults(results) {
+  const container = document.getElementById("results");
+  container.innerHTML = results.map(token => `
+    <div class="token-column">
+      <h3>${token.name}</h3>
+      <table>
+        <thead><tr><th>地址</th><th>持仓%</th></tr></thead>
+        <tbody>
+          ${token.holders.map(h => {
+            const remark = addressRemarks[h.wallet] || h.wallet;
+            const colorClass = results.filter(r => r.holders.some(x => x.wallet === h.wallet)).length;
+            const color = colorClass === 2 ? 'blue' : colorClass === 3 ? 'red' : 'black';
+            return `<tr><td><a href="https://solscan.io/account/${h.wallet}" target="_blank" style="color:${color}">${remark}</a></td><td>${h.percent.toFixed(4)}%</td></tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`).join('');
 
-    function showOverlap(tokenData) {
-      const tokens = tokenData;
-      if (tokens.length !== 2) {
-        document.getElementById("overlap-container").innerHTML = "";
-        return;
-      }
+  document.getElementById("timestamp").innerText = `查询时间：${new Date().toLocaleString()}`;
+}
 
-      const holdersA = tokenData[0].holders;
-      const holdersB = tokenData[1].holders;
-      const mapA = new Map(holdersA.map(i => [i.wallet, i]));
-      const mapB = new Map(holdersB.map(i => [i.wallet, i]));
+function showOverlap(tokenData) {
+  const count = tokenData.length;
+  const overlapMap = new Map();
 
-      let overlap = [];
-      let totalOverlap = 0;
+  tokenData.forEach(token => {
+    token.holders.forEach(holder => {
+      const entry = overlapMap.get(holder.wallet) || { wallet: holder.wallet, count: 0, percents: {} };
+      entry.count += 1;
+      entry.percents[token.name] = holder.percent;
+      overlapMap.set(holder.wallet, entry);
+    });
+  });
 
-      for (const [addr, a] of mapA.entries()) {
-        if (mapB.has(addr)) {
-          const b = mapB.get(addr);
-          const percentA = a.percent;
-          const percentB = b.percent;
-          totalOverlap += percentA + percentB;
-          overlap.push({ addr, percentA, percentB });
-        }
-      }
+  const overlap = Array.from(overlapMap.values()).filter(e => e.count >= 2);
+  if (overlap.length === 0) {
+    document.getElementById("overlap-container").innerHTML = "";
+    return;
+  }
 
-      let html = `<h3>重叠率统计</h3>`;
-      html += `<p><strong>重叠率总和：</strong>${totalOverlap.toFixed(4)}%</p>`;
-      html += `<table><thead><tr><th>#</th><th>地址</th><th>${tokenData[0].name} 持仓%</th><th>${tokenData[1].name} 持仓%</th></tr></thead><tbody>`;
-
-      overlap.forEach((o, i) => {
-        const display = addressRemarks[o.addr] || o.addr;
-        html += `<tr><td style='color:blue;'>${i + 1}</td><td><a href='https://solscan.io/account/${o.addr}' target='_blank'>${display}</a></td><td>${o.percentA.toFixed(4)}%</td><td>${o.percentB.toFixed(4)}%</td></tr>`;
-      });
-
-      html += `</tbody></table>`;
-      document.getElementById("overlap-container").innerHTML = html;
-    }
-  </script>
+  const tokenNames = tokenData.map(t => t.name);
+  let html = `<h3>${count === 2 ? "重叠率统计" : "三重率统计"}</h3>`;
+  let totalSum = 0;
+  html += `<table><thead><tr><th>#</th><th>地址</th>${tokenNames.map(n => `<th>${n} 持仓%</th>`).join("")}</tr></thead><tbody>`;
+  overlap.forEach((o, i) => {
+    const name = addressRemarks[o.wallet] || o.wallet;
+    const row = tokenNames.map(n => {
+      const p = o.percents[n] || 0;
+      totalSum += p;
+      return `<td>${p.toFixed(4)}%</td>`;
+    }).join("");
+    html += `<tr><td>${i + 1}</td><td><a href="https://solscan.io/account/${o.wallet}" target="_blank">${name}</a></td>${row}</tr>`;
+  });
+  html += `</tbody></table>`;
+  html += `<p><strong>重叠率总和：</strong>${totalSum.toFixed(4)}%</p>`;
+  document.getElementById("overlap-container").innerHTML = html;
+}
+        </script>
 </body>
 </html>
