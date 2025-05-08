@@ -33,10 +33,13 @@
   <div id="overlap-container"></div>
   <div id="timestamp"></div>
   <script>
-    const addressRemarks = {
-      "Be1wABrhNCprQVep99KurhKJWXfQVNAZ1A5DM21Bi7AM": "八月3",
-      "EiiAnQsfcruxHFkDabAmH4gzqLUZoEVwRuqEFQGP11xw": "trump大鲸鱼(做市商)"
-    };
+    // 保证只声明一次
+    if (typeof window.addressRemarks === 'undefined') {
+      window.addressRemarks = {
+        "Be1wABrhNCprQVep99KurhKJWXfQVNAZ1A5DM21Bi7AM": "八月3",
+        "EiiAnQsfcruxHFkDabAmH4gzqLUZoEVwRuqEFQGP11xw": "trump大鲸鱼(做市商)"
+      };
+    }
 
     async function handleQuery() {
       document.getElementById("loading").style.display = "block";
@@ -122,10 +125,8 @@
 
         html += `</tbody></table>`;
         container.innerHTML = html;
-
-      } else if (tokens.length === 3) {
-        console.log("⚠️ 错误地进入了三重率逻辑");
-        container.innerHTML = `<p>三重率逻辑尚未实现</p>`;
+      } else {
+        console.log("⚠️ 非双代币输入，不显示重叠率");
       }
     }
   </script>
