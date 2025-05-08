@@ -87,40 +87,44 @@
 
     function showOverlap(tokenData) {
       const tokens = tokenData;
-      if (tokens.length !== 2) {
-        document.getElementById("overlap-container").innerHTML = "";
-        return;
-      }
+      const container = document.getElementById("overlap-container");
+      container.innerHTML = "";
 
-      const holdersA = tokenData[0].holders;
-      const holdersB = tokenData[1].holders;
-      const mapA = new Map(holdersA.map(i => [i.wallet, i]));
-      const mapB = new Map(holdersB.map(i => [i.wallet, i]));
+      if (tokens.length === 2) {
+        const holdersA = tokens[0].holders;
+        const holdersB = tokens[1].holders;
+        const mapA = new Map(holdersA.map(i => [i.wallet, i]));
+        const mapB = new Map(holdersB.map(i => [i.wallet, i]));
 
-      let overlap = [];
-      let totalOverlap = 0;
+        let overlap = [];
+        let totalOverlap = 0;
 
-      for (const [addr, a] of mapA.entries()) {
-        if (mapB.has(addr)) {
-          const b = mapB.get(addr);
-          const percentA = a.percent || 0;
-          const percentB = b.percent || 0;
-          totalOverlap += percentA + percentB;
-          overlap.push({ addr, percentA, percentB });
+        for (const [addr, a] of mapA.entries()) {
+          if (mapB.has(addr)) {
+            const b = mapB.get(addr);
+            const percentA = a.percent || 0;
+            const percentB = b.percent || 0;
+            totalOverlap += percentA + percentB;
+            overlap.push({ addr, percentA, percentB });
+          }
         }
+
+        let html = `<h3>重叠率统计</h3>`;
+        html += `<p><strong>重叠率总和：</strong>${totalOverlap.toFixed(4)}%</p>`;
+        html += `<table><thead><tr><th>#</th><th>地址</th><th>${tokens[0].name} 持仓%</th><th>${tokens[1].name} 持仓%</th></tr></thead><tbody>`;
+
+        overlap.forEach((o, i) => {
+          const display = addressRemarks[o.addr] || o.addr;
+          html += `<tr><td>${i + 1}</td><td><a href='https://solscan.io/account/${o.addr}' target='_blank'>${display}</a></td><td>${o.percentA.toFixed(4)}%</td><td>${o.percentB.toFixed(4)}%</td></tr>`;
+        });
+
+        html += `</tbody></table>`;
+        container.innerHTML = html;
+
+      } else if (tokens.length === 3) {
+        // 保留三重率逻辑的后续扩展点
+        container.innerHTML = `<p>三重率逻辑尚未实现</p>`;
       }
-
-      let html = `<h3>重叠率统计</h3>`;
-      html += `<p><strong>重叠率总和：</strong>${totalOverlap.toFixed(4)}%</p>`;
-      html += `<table><thead><tr><th>#</th><th>地址</th><th>${tokenData[0].name} 持仓%</th><th>${tokenData[1].name} 持仓%</th></tr></thead><tbody>`;
-
-      overlap.forEach((o, i) => {
-        const display = addressRemarks[o.addr] || o.addr;
-        html += `<tr><td>${i + 1}</td><td><a href='https://solscan.io/account/${o.addr}' target='_blank'>${display}</a></td><td>${o.percentA.toFixed(4)}%</td><td>${o.percentB.toFixed(4)}%</td></tr>`;
-      });
-
-      html += `</tbody></table>`;
-      document.getElementById("overlap-container").innerHTML = html;
     }
   </script>
 </body>
