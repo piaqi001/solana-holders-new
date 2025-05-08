@@ -44,7 +44,7 @@
       const t2 = document.getElementById("token2").value.trim();
       const t3 = document.getElementById("token3").value.trim();
 
-      const tokens = [t1, t2, t3].filter(Boolean);
+      const tokens = [t1, t2, t3].map(s => s.trim()).filter(s => s.length > 0);
       const results = [];
 
       for (let token of tokens) {
