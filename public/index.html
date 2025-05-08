@@ -121,7 +121,7 @@ const color = count === 2 ? 'blue' : count === 3 ? 'red' : 'black';
       totalSum += p;
       return `<td>${p.toFixed(4)}%</td>`;
     }).join("");
-    html += `<tr><td>${i + 1}</td><td><a href="https://solscan.io/account/${o.wallet}" target="_blank" style="color:${color}">${name}</a></td>${row}</tr>`;
+    html += `<tr><td>${i + 1}</td><td><a href='https://solscan.io/account/${o.wallet}' target='_blank' style='color:${color}'>${name}</a></td>${row}</tr>`;
   });
   html += `</tbody></table>`;
   html += `<p><strong>重叠率总和：</strong>${totalSum.toFixed(4)}%</p>`;
