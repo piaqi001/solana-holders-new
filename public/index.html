@@ -1,9 +1,10 @@
 <!DOCTYPE html>
+
 <html>
 <head>
-  <meta charset="utf-8">
-  <title>Solana 多代币前 400 持仓查询</title>
-  <style>
+<meta charset="utf-8"/>
+<title>Solana 多代币前 400 持仓查询</title>
+<style>
     body { font-family: Arial, sans-serif; padding: 20px; }
     input { padding: 6px; width: 480px; margin-bottom: 10px; display: block; }
     button { padding: 6px 12px; margin-bottom: 20px; }
@@ -23,16 +24,16 @@
   </style>
 </head>
 <body>
-  <h2>Solana 多代币前 400 持仓查询</h2>
-  <input type="text" id="token1" placeholder="请输入第一个代币地址">
-  <input type="text" id="token2" placeholder="请输入第二个代币地址">
-  <input type="text" id="token3" placeholder="可选：第三个代币地址">
-  <button onclick="handleQuery()">查询</button>
-  <div id="loading" class="loading" style="display:none;">查询中，请稍候...</div>
-  <div class="results-container" id="results"></div>
-  <div id="overlap-container"></div>
-  <div id="timestamp"></div>
-  <script>
+<h2>Solana 多代币前 400 持仓查询</h2>
+<input id="token1" placeholder="请输入第一个代币地址" type="text"/>
+<input id="token2" placeholder="请输入第二个代币地址" type="text"/>
+<input id="token3" placeholder="可选：第三个代币地址" type="text"/>
+<button onclick="handleQuery()">查询</button>
+<div class="loading" id="loading" style="display:none;">查询中，请稍候...</div>
+<div class="results-container" id="results"></div>
+<div id="overlap-container"></div>
+<div id="timestamp"></div>
+<script>
     const addressRemarks = {
       "Be1wABrhNCprQVep99KurhKJWXfQVNAZ1A5DM21Bi7AM": "八月3",
       "EiiAnQsfcruxHFkDabAmH4gzqLUZoEVwRuqEFQGP11xw": "trump大鲸鱼(做市商)"
@@ -109,8 +110,8 @@
       for (const [addr, a] of mapA.entries()) {
         if (mapB.has(addr)) {
           const b = mapB.get(addr);
-          const percentA = a.amount;
-          const percentB = b.amount;
+          const percentA = a.percent;
+          const percentB = b.percent;
           totalOverlap += percentA + percentB;
           overlap.push({ addr, percentA, percentB });
         }
