@@ -111,13 +111,17 @@ function showOverlap(tokenData) {
   let totalSum = 0;
   html += `<table><thead><tr><th>#</th><th>地址</th>${tokenNames.map(n => `<th>${n} 持仓%</th>`).join("")}</tr></thead><tbody>`;
   overlap.forEach((o, i) => {
-    const name = addressRemarks[o.wallet] || o.wallet;
+    
+const count = o.count;
+const name = addressRemarks[o.wallet] || o.wallet;
+const color = count === 2 ? 'blue' : count === 3 ? 'red' : 'black';
+
     const row = tokenNames.map(n => {
       const p = o.percents[n] || 0;
       totalSum += p;
       return `<td>${p.toFixed(4)}%</td>`;
     }).join("");
-    html += `<tr><td>${i + 1}</td><td><a href="https://solscan.io/account/${o.wallet}" target="_blank">${name}</a></td>${row}</tr>`;
+    html += `<tr><td>${i + 1}</td><td><a href="https://solscan.io/account/${o.wallet}" target="_blank" style="color:${color}">${name}</a></td>${row}</tr>`;
   });
   html += `</tbody></table>`;
   html += `<p><strong>重叠率总和：</strong>${totalSum.toFixed(4)}%</p>`;
