@@ -123,7 +123,7 @@
 
       overlap.forEach((o, i) => {
         const display = addressRemarks[o.addr] || o.addr;
-        html += `<tr><td>${i + 1}</td><td><a href='https://solscan.io/account/${o.addr}' target='_blank'>${display}</a></td><td>${o.percentA.toFixed(4)}%</td><td>${o.percentB.toFixed(4)}%</td></tr>`;
+        html += `<tr><td style='color:blue;'>${i + 1}</td><td><a href='https://solscan.io/account/${o.addr}' target='_blank'>${display}</a></td><td>${o.percentA.toFixed(4)}%</td><td>${o.percentB.toFixed(4)}%</td></tr>`;
       });
 
       html += `</tbody></table>`;
