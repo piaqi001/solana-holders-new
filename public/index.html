@@ -87,10 +87,12 @@
 
     function showOverlap(tokenData) {
       const tokens = tokenData;
+      console.log("tokenData.length =", tokens.length, tokens.map(t => t.name));
       const container = document.getElementById("overlap-container");
       container.innerHTML = "";
 
       if (tokens.length === 2) {
+        console.log("✅ 正在执行两个代币的重叠率逻辑");
         const holdersA = tokens[0].holders;
         const holdersB = tokens[1].holders;
         const mapA = new Map(holdersA.map(i => [i.wallet, i]));
@@ -122,7 +124,7 @@
         container.innerHTML = html;
 
       } else if (tokens.length === 3) {
-        // 保留三重率逻辑的后续扩展点
+        console.log("⚠️ 错误地进入了三重率逻辑");
         container.innerHTML = `<p>三重率逻辑尚未实现</p>`;
       }
     }
