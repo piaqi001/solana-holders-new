@@ -1,103 +1,85 @@
-// main.js
-
 async function handleQuery() {
-  const tokenInputs = [...document.querySelectorAll("input")].map(i => i.value.trim()).filter(Boolean);
-  const resultsDiv = document.getElementById("results");
-  const loadingDiv = document.getElementById("loading");
-  const timestampDiv = document.getElementById("timestamp");
-  const overlapContainer = document.getElementById("overlap-container");
-
-  resultsDiv.innerHTML = "";
-  overlapContainer.innerHTML = "";
-  timestampDiv.innerText = "";
-  loadingDiv.style.display = "block";
+  const tokens = [token1.value, token2.value, token3.value].map(x => x.trim()).filter(x => x);
+  if (tokens.length < 2) {
+    alert("请至少输入两个代币地址");
+    return;
+  }
+  document.getElementById("loading").style.display = "block";
+  document.getElementById("results").innerHTML = "";
+  document.getElementById("overlap-container").innerHTML = "";
+  document.getElementById("timestamp").innerText = "";
 
   try {
-    const tokensData = await Promise.all(tokenInputs.map(token =>
-      fetch(`/api/holders?token=${token}`).then(res => res.json())
+    const allHolders = await Promise.all(tokens.map(t =>
+      fetch(`/api/holders?token=${t}`).then(res => res.json())
     ));
 
-    tokensData.forEach((holders, i) => {
-      const total = holders.reduce((acc, cur) => acc + cur.amount, 0);
-      tokensData[i] = holders.map((h, idx) => ({
-        ...h,
-        index: idx + 1,
-        percent: ((h.amount / total) * 100).toFixed(4)
-      }));
-    });
+    const totalByToken = allHolders.map(list => list.reduce((sum, h) => sum + h.amount, 0));
+    const holdersWithPercent = allHolders.map((list, idx) =>
+      list.map((h, i) => ({
+        wallet: h.wallet,
+        amount: h.amount,
+        percent: +(100 * h.amount / totalByToken[idx]).toFixed(4)
+      }))
+    );
 
-    const resultsHTML = tokensData.map((holders, i) => {
-      const tokenName = tokenInputs[i];
-      return `<div class="token-column"><h3>${tokenName}</h3>
-        <table><tr><th>#</th><th>地址</th><th>持仓%</th></tr>
-        ${holders.map(h => {
-          const name = addressRemarks[h.wallet] || h.wallet;
-          const colorClass = colorForAddress(h.wallet, tokensData);
-          return `<tr class="${colorClass}"><td>${h.index}</td><td>${name}</td><td>${h.percent}%</td></tr>`;
-        }).join("")}
-        </table></div>`;
+    const resultsHTML = holdersWithPercent.map((list, idx) => {
+      return `<div class="token-column"><h3>第 ${idx + 1} 个代币</h3>
+        <table><tr><th>#</th><th>地址</th><th>数量</th><th>百分比</th></tr>` +
+        list.map((h, i) => `<tr><td>${i + 1}</td><td>${h.wallet}</td><td>${h.amount.toLocaleString()}</td><td>${h.percent.toFixed(4)}%</td></tr>`).join("") +
+        `</table></div>`;
     }).join("");
+    document.getElementById("results").innerHTML = resultsHTML;
 
-    resultsDiv.innerHTML = resultsHTML;
-    timestampDiv.innerText = `查询时间：${new Date().toLocaleString()}`;
-
-    if (tokensData.length > 1) {
-      showOverlap(tokensData);
-    }
+    showOverlap(holdersWithPercent, tokens);
+    document.getElementById("timestamp").innerText = "查询时间：" + new Date().toLocaleString();
   } catch (e) {
-    resultsDiv.innerHTML = '<div class="error">查询失败，请检查代币地址是否正确。</div>';
-  } finally {
-    loadingDiv.style.display = "none";
+    alert("请检查代币地址是否正确。");
   }
+  document.getElementById("loading").style.display = "none";
 }
 
-function colorForAddress(wallet, allTokens) {
-  const count = allTokens.filter(list => list.find(h => h.wallet === wallet)).length;
-  return count === 3 ? 'color-3' : count === 2 ? 'color-2' : 'color-1';
-}
-
-function showOverlap(tokensData) {
-  const overlapContainer = document.getElementById("overlap-container");
-  const [first, ...rest] = tokensData;
-  const overlap = {};
-
-  first.forEach(h => {
-    const count = tokensData.reduce((acc, list) => acc + (list.find(x => x.wallet === h.wallet) ? 1 : 0), 0);
-    if (count >= 2) {
-      const name = addressRemarks[h.wallet] || h.wallet;
-      overlap[h.wallet] = { name, count, amount: h.amount, percent: h.percent };
-    }
+function showOverlap(holdersWithPercent, tokens) {
+  const counts = {};
+  holdersWithPercent.forEach(list => {
+    list.forEach(({ wallet }) => {
+      counts[wallet] = (counts[wallet] || 0) + 1;
+    });
   });
 
-  const rows = Object.entries(overlap).map(([wallet, info], idx) => {
-    const colorClass = info.count === 3 ? 'color-3' : info.count === 2 ? 'color-2' : 'color-1';
-    return `<tr class="${colorClass}"><td>${idx + 1}</td><td>${info.name}</td><td>${info.percent}%</td></tr>`;
-  });
+  const overlapWallets = Object.entries(counts).filter(([, c]) => c >= 2).map(([wallet]) => wallet);
+  const header = `<h3>重叠地址 (${overlapWallets.length})</h3><table><tr><th>#</th><th>地址</th>` +
+    tokens.map((_, i) => `<th>代币${i + 1}占比</th>`).join("") +
+    `<th>出现次数</th></tr>`;
 
-  if (rows.length > 0) {
-    const sum = Object.values(overlap).reduce((acc, cur) => acc + parseFloat(cur.percent), 0).toFixed(4);
-    overlapContainer.innerHTML = `
-      <h3>重叠地址统计</h3>
-      <table>
-        <tr><th>#</th><th>地址</th><th>总持仓%</th></tr>
-        ${rows.join("")}
-        <tr><td colspan="2">重叠地址总持仓</td><td>${sum}%</td></tr>
-      </table>`;
-  }
+  const rows = overlapWallets.map((wallet, idx) => {
+    const percents = holdersWithPercent.map(list => {
+      const match = list.find(h => h.wallet === wallet);
+      return match ? `${match.percent.toFixed(4)}%` : "-";
+    });
+    return `<tr><td>${idx + 1}</td><td>${wallet}</td>${percents.map(p => `<td>${p}</td>`).join("")}<td>${counts[wallet]}</td></tr>`;
+  }).join("");
+
+  document.getElementById("overlap-container").innerHTML = header + rows + "</table>";
 }
 
 function exportCSV() {
-  const rows = [...document.querySelectorAll("table")].flatMap(table =>
-    [...table.rows].map(row =>
-      [...row.cells].map(cell => cell.innerText).join(",")
-    )
-  );
+  const csv = [];
+  document.querySelectorAll("table").forEach(table => {
+    Array.from(table.rows).forEach(row => {
+      const cols = Array.from(row.cells).map(cell => `"${cell.innerText.replace(/"/g, '""')}"`);
+      csv.push(cols.join(","));
+    });
+    csv.push("");
+  });
 
-  const blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8;" });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = "solana-holders.csv";
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  const blob = new Blob(["﻿" + csv.join("
+")], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "solana-holders.csv";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
