@@ -1,34 +1,38 @@
-
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Solana 多代币持仓查询</title>
+  <meta charset="utf-8">
+  <title>Solana 多代币前 400 持仓查询</title>
   <style>
     body { font-family: Arial, sans-serif; padding: 20px; }
-    input { padding: 6px; width: 500px; margin-bottom: 10px; display: block; }
-    button { padding: 6px 16px; margin-bottom: 20px; }
-    table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-    th { background-color: #f0f0f0; }
-    .loading { color: gray; font-style: italic; }
-    .token-column { float: left; width: 33%; overflow-x: auto; }
+    input { padding: 6px; width: 480px; margin-bottom: 10px; display: block; }
+    button { padding: 6px 12px; margin-bottom: 20px; }
+    h3 { margin-top: 40px; }
+    .results-container { display: flex; justify-content: space-between; gap: 20px; }
+    .token-column { flex: 1; overflow: auto; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+    th, td { border: 1px solid #ddd; padding: 6px; text-align: center; }
+    th { background-color: #f2f2f2; }
+    a { color: inherit; text-decoration: underline; }
+    .loading { font-style: italic; color: gray; margin-top: 10px; }
+    .error { color: red; margin-top: 10px; }
     .color-1 { color: black; }
     .color-2 { color: blue; }
     .color-3 { color: red; }
+    #timestamp { margin-top: 10px; font-size: 14px; font-style: italic; color: gray; }
   </style>
 </head>
 <body>
   <h2>Solana 多代币前 400 持仓查询</h2>
-  <input type="text" id="token1" placeholder="输入第一个代币地址">
-  <input type="text" id="token2" placeholder="输入第二个代币地址">
+  <input type="text" id="token1" placeholder="请输入第一个代币地址">
+  <input type="text" id="token2" placeholder="请输入第二个代币地址">
   <input type="text" id="token3" placeholder="可选：第三个代币地址">
   <button onclick="handleQuery()">查询</button>
+  <button onclick="exportCSV()">导出数据 CSV</button>
   <div id="loading" class="loading" style="display:none;">查询中，请稍候...</div>
-  <div id="result" style="overflow: auto;"></div>
-  <div id="overlapStats"></div>
+  <div class="results-container" id="results"></div>
+  <div id="overlap-container"></div>
   <div id="timestamp"></div>
-  <script src="remarks.js"></script>
   <script src="main.js"></script>
 </body>
 </html>
