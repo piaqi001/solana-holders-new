@@ -1,38 +1,29 @@
+
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Solana 多代币前 400 持仓查询</title>
-  <script src="main.js"></script>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    input { padding: 6px; width: 480px; margin-bottom: 10px; display: block; }
-    button { padding: 6px 12px; margin-bottom: 20px; }
-    h3 { margin-top: 40px; }
-    .results-container { display: flex; justify-content: space-between; gap: 20px; }
-    .token-column { flex: 1; overflow: auto; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
-    th, td { border: 1px solid #ddd; padding: 6px; text-align: center; }
-    th { background-color: #f2f2f2; }
-    a { color: inherit; text-decoration: underline; }
-    .loading { font-style: italic; color: gray; margin-top: 10px; }
-    .error { color: red; margin-top: 10px; }
-    .color-1 { color: black; }
-    .color-2 { color: blue; }
-    .color-3 { color: red; }
-    #timestamp { margin-top: 10px; font-size: 14px; font-style: italic; color: gray; }
-  </style>
+    <meta charset="UTF-8">
+    <title>Solana 多代币持仓查询</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        input { width: 100%; margin-bottom: 10px; padding: 8px; }
+        button { padding: 10px 20px; margin-right: 10px; }
+        .results-container { display: flex; justify-content: space-between; }
+        .token-column { width: 32%; border: 1px solid #ccc; padding: 10px; overflow-x: auto; }
+        .address { font-family: monospace; white-space: nowrap; }
+    </style>
 </head>
 <body>
-  <h2>Solana 多代币前 400 持仓查询</h2>
-  <input type="text" id="token1" placeholder="请输入第一个代币地址">
-  <input type="text" id="token2" placeholder="请输入第二个代币地址">
-  <input type="text" id="token3" placeholder="可选：第三个代币地址">
-  <button onclick="handleQuery()">查询</button>
-  <button onclick="exportCSV()">导出数据 CSV</button>
-  <div id="loading" class="loading" style="display:none;">查询中，请稍候...</div>
-  <div class="results-container" id="results"></div>
-  <div id="overlap-container"></div>
-  <div id="timestamp"></div>
+    <h1>Solana 多代币持仓查询</h1>
+    <input type="text" id="token1" placeholder="Token 1 地址">
+    <input type="text" id="token2" placeholder="Token 2 地址">
+    <input type="text" id="token3" placeholder="Token 3 地址">
+    <button onclick="handleQuery()">查询</button>
+    <button onclick="exportCSV()">导出 CSV</button>
+    <div id="loading" style="display:none;">查询中...</div>
+    <div id="timestamp"></div>
+    <div class="results-container" id="results"></div>
+    <div id="overlap-container"></div>
+    <script src="main.js"></script>
 </body>
 </html>
